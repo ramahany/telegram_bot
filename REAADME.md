@@ -7,3 +7,4 @@
 # run the docker container 
     docker run --rm --env-file .env my_telegram_bot
     Note: when using the .env file make sure you remove the quotes around the values
+## Hosting docker using railway
