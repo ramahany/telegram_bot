@@ -6,23 +6,21 @@ from collections import defaultdict
 from datetime import datetime
 import logging
 
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-# )
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger("telegram_bot_log")
 # hist functions
 def create_inner_dict():
     return {"hist":[], "last_active": datetime.today()}
 
 def is_session_expired(last_sesion, curr,threshold): # threshold in hours
-
-    return (curr-last_sesion).total_seconds() // 60 >= threshold 
-    # return (last_sesion-curr).total_seconds() // 3600 >= threshold
+    return (curr-last_sesion).total_seconds() // 3600 >= threshold
 
 
 bot_settings = get_settings()
-client = GroqClient(api_key=bot_settings.GROQ_API_KEY)
+client = GroqClient()
 bot = telebot.TeleBot(token=bot_settings.BOT_TOKEN)
 all_hist = defaultdict(create_inner_dict)
 
@@ -69,4 +67,4 @@ if __name__ == '__main__':
     logger.info("bot is running ...")
     print("bot is running ...")
     bot.infinity_polling()
-    
+

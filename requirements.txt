@@ -1,3 +1,7 @@
 pyTelegramBotAPI==4.31.0
 pydantic-settings==2.13.1
-groq==1.0.0
+# groq==1.1.1
+mcp-use==1.6.0
+langchain-groq==1.1.2
+# for the MCP server
+uv==0.10.11
