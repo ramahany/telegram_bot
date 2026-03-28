@@ -15,6 +15,7 @@ class GroqClient:
             api_key=self.settings.GROQ_API_KEY,
             
             )
+        
         # self.agent = MCPAgent(
         #     llm = ChatGroq(
         #         model="llama-3.1-8b-instant",
@@ -56,6 +57,61 @@ class GroqClient:
         print(result)
 
     
+    async def responce_with_local_tools(self, hist:list, model:str="llama-3.3-70b-versatile"):
+        available_tools = {
+            "create_obsidian_note" : create_obsidian_note
+        }
+
+        chat_completion = self.client.chat.completions.create(
+                            messages=[
+                                        {
+                                            "role": "system",
+                                            "content":"" # TODO Create a good system prompt to test the obsidian tool 
+                                        }
+                                        ]+ hist,
+                            tools=[
+                                    {   
+                                        "type": "function",
+                                        "function":{
+                                            "name":"create_obsidian_note",
+                                            "description":"Creates obsidian note",
+                                            "parameters" : {
+                                                "type":"object",
+                                                "properties" : {
+                                                    "note_title":{
+                                                        "type":"string",
+                                                        "description" : "The title used for the obsidian note"
+                                                    },
+                                                    "note_content":{
+                                                        "type":"string",
+                                                        "description" : "The content stored obsidian note"
+                                                    }
+                                                },
+                                            "required" : ["note_title", "note_content"]
+                                            }
+                                            
+                                        }
+                                    }],
+                            model=model,
+                            temperature=0.1,
+                        )
+        
+        res_msg = chat_completion.choices[0].message
+        tool_calls = res_msg.tool_calls
+        if tool_calls: 
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_to_call = available_tools.get(function_name, -1)
+                if function_to_call == -1 : 
+                    hist.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": "invalid function",
+                })
+        
+
+
 
     def response(self, hist:list, model:str="llama-3.3-70b-versatile"):
         chat_completion = self.client.chat.completions.create(
