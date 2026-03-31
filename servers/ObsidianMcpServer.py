@@ -1,9 +1,12 @@
 from helpers.config import get_settings
 from mcp_use import MCPClient
+import logging
 
 class ObsidianMcpServer:
     def __init__(self):
         self.settings = get_settings()
+        self.logger = logging.getLogger("telegram_bot_log")
+        self.logger.info("creating server")
         self.mcp_server = MCPClient({
             "mcpServers":{
                 "mcp-obsidian": {
@@ -17,6 +20,7 @@ class ObsidianMcpServer:
                 }
             }
         })
+        self.logger.info(self.mcp_server)
         self.session = None
     
     async def create_session(self, server_name:str = "mcp-obsidian"):
@@ -28,15 +32,18 @@ class ObsidianMcpServer:
     
     async def obsidian_add_note_async(self, filepath:str, content:str):
         result = None
+        print("creating session")
         try: 
             await self.create_session()
+            print("calling tool")
             result = await self.session.call_tool(
             "obsidian_append_content" , 
-            {'filepath' : filepath, 'content': content}
+            {'filepath' : filepath+'.md', 'content': content}
             )
+            print("clossing session")
             await self.close_seesion()
-        except :
-            print("couldn't call tool")
+        except Exception as e:
+            print("couldn't call tool", e)
         return result
         
 

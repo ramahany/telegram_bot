@@ -1,4 +1,5 @@
-import telebot 
+import asyncio
+from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
 from helpers.config import get_settings
 from llm import GroqClient
@@ -21,18 +22,28 @@ def is_session_expired(last_sesion, curr,threshold): # threshold in hours
 
 bot_settings = get_settings()
 client = GroqClient()
-bot = telebot.TeleBot(token=bot_settings.BOT_TOKEN)
+# bot = telebot.TeleBot(token=bot_settings.BOT_TOKEN)
+bot = AsyncTeleBot(token= bot_settings.BOT_TOKEN)
 all_hist = defaultdict(create_inner_dict)
 
 @bot.message_handler(commands=['hello']) # / + command
-def send_welcome(message:Message): 
-    bot.reply_to(
+async def send_welcome(message:Message): 
+    await bot.reply_to(
         message=message,
         text=f"hello, I am a CHAT BOT created by the most spactacular, amazing woman on planet earth.\nher name is r4m4 you would love to know her, but she doesn't like talking to human beings."
     )
-
+@bot.message_handler(commands=['start']) # / + command
+async def send_welcome(message:Message): 
+    await bot.reply_to(
+        message=message,
+        text=f"Hello, I am IdeaPop, I am an AI chatbot created by r4m4"
+    )
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="I'm here to assist you with your late-night ideas and help you structure a plan and ask you clarifying questions. If you want to start, state your idea anytime."
+    )
 @bot.message_handler(func= lambda message: True)
-def groq_response(message:Message): 
+async def groq_response(message:Message): 
 
     curr_time = datetime.today()
 
@@ -46,25 +57,16 @@ def groq_response(message:Message):
         "content":message.text
     })
 
-    groq_response = client.response(hist=all_hist[message.chat.id]["hist"])
-
-    all_hist[message.chat.id]["hist"].append({
-        "role": "assistant",
-        "content":groq_response
-    })
-
-    bot.reply_to(
+    all_hist[message.chat.id]["hist"] = await client.responce_with_local_tools(hist=all_hist[message.chat.id]["hist"])
+    groq_response = all_hist[message.chat.id]["hist"][-1].content
+    await bot.reply_to(
         message=message, 
         text=groq_response[:4000]
     )
-    
-    # bot.send_message(
-    #     chat_id=message.chat.id,
-    #     text="done"
-    # )
+
 
 if __name__ == '__main__':
-    logger.info("bot is running ...")
+    logger.info("bot is running ......")
     print("bot is running ...")
-    bot.infinity_polling()
+    asyncio.run(bot.infinity_polling())
 

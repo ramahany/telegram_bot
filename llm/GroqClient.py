@@ -5,6 +5,7 @@ from servers import ObsidianMcpServer
 from mcp_use import MCPAgent, MCPClient
 from langchain_groq import ChatGroq
 from tools.add_obsidian_note_groq import create_obsidian_note
+import json
 
 class GroqClient:
     def __init__(self):
@@ -66,7 +67,7 @@ class GroqClient:
                             messages=[
                                         {
                                             "role": "system",
-                                            "content":"" # TODO Create a good system prompt to test the obsidian tool 
+                                            "content":Prompts.SYSTEM_PROMPT.value 
                                         }
                                         ]+ hist,
                             tools=[
@@ -97,6 +98,7 @@ class GroqClient:
                         )
         
         res_msg = chat_completion.choices[0].message
+        hist.append(res_msg)
         tool_calls = res_msg.tool_calls
         if tool_calls: 
             for tool_call in tool_calls:
@@ -109,34 +111,20 @@ class GroqClient:
                     "name": function_name,
                     "content": "invalid function",
                 })
+                else :
+                    print(tool_call.function.arguments)
+                    print('_' * 20)
+                    function_args = json.loads(tool_call.function.arguments)
+                    result = await function_to_call(**function_args)
+                    hist.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": str(result),
+                })
+                hist = await self.responce_with_local_tools(hist)
+
+        return hist
         
-
-
-
-    def response(self, hist:list, model:str="llama-3.3-70b-versatile"):
-        chat_completion = self.client.chat.completions.create(
-            messages=[
-                        {
-                            "role": "system",
-                            "content":"" # TODO Create a good system prompt to test the obsidian tool 
-                        }
-                        ]+ hist,
-            tools=[
-                    {   
-                        "type": "function",
-                        "function":{
-                            "name":"create_obsidian_note",
-                            
-                        }
-                    }],
-
-            model=model,
-            temperature=0.1,
-        )
-
-        
-        if not chat_completion or not chat_completion.choices or len(chat_completion.choices) == 0 or not chat_completion.choices[0].message :
-            return "Client didn't work prop"
-        return chat_completion.choices[0].message.content
     
 
